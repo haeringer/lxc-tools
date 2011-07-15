@@ -1,3 +1,9 @@
+lxc-tools (0.1.2) unstable; urgency=low
+
+  * Improved lxc-init and lxc-halt to work on our setup
+
+ -- Lucas Bonnet <lbonnet@bearstech.com>  Fri, 15 Jul 2011 19:41:42 +0200
+
 lxc-tools (0.1.1) unstable; urgency=low
 
   * Patched lxc-status to work on newer LXC containers
