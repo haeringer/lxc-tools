@@ -18,72 +18,36 @@ DESC="linux containers"
 NAME=lxc
 SCRIPTNAME=/etc/init.d/$NAME
 
-# Exit if the package is not installed
-[ -x /usr/bin/lxc-start ] || exit 0
-
 . /lib/init/vars.sh
 . /lib/lsb/init-functions
 
+
+lxc_stopped_list=$(lxc-status | grep STOPPED | awk '{print $1}' | sed "s/'//g")
+lxc_running_list=$(lxc-status | grep RUNNING | awk '{print $1}' | sed "s/'//g")
+lxc_dir="/var/lib/lxc"
+
 do_start()
 {
-    for C in $(ls -1 /var/lib/lxc); do
-        if [ -r /var/lib/lxc/$C/autostart ]; then
-            if [ "$(cat /var/lib/lxc/$C/autostart)" = "1" ]; then
-                log_progress_msg "$C"
-                if lxc-info -n $C | grep STOPPED > /dev/null 2>&1; then
-                    if [ -x /usr/bin/screen ]; then
-                        /usr/bin/screen -dmS init-${C} /usr/bin/lxc-start -n $C
-                    else
-                        lxc-start -n $C -d
-                    fi
-                    lxc-wait -n $C -s RUNNING
-                    if [ $? -gt 0 ]; then
-                        return 2
-                    fi
-                fi
-            fi
+  for C in $lxc_stopped_list ; do
+    if [ -f $lxc_dir/$C/autostart ]; then
+      log_progress_msg "$C"
+      if lxc-info -n $C | grep STOPPED > /dev/null 2>&1; then
+        screen -dm -S lxc-${C} /usr/bin/lxc-start -n $C
+        lxc-wait -n $C -s RUNNING
+        if [ $? -gt 0 ]; then
+          return 2
         fi
-    done
+      fi
+    fi
+  done
 }
 
 do_stop()
 {
-    halt=$(which lxc-halt)
-    for C in $(ls -1 /var/lib/lxc); do
-        if [ -f /var/lib/lxc/$C/state ]; then
-            log_progress_msg "$C"
-            if lxc-info -n $C | grep RUNNING > /dev/null 2>&1; then
-                if [ -n "$halt" ]; then
-                    $halt -n $C &
-                else
-                    /usr/bin/lxc-stop -n $C
-                    if [ $? -gt 0 ]; then
-                        return 2
-                    fi
-                fi
-            fi
-        fi
-    done
-
-    if [ -n "$halt" ]; then
-        # Wait for all containers to be shutdown
-        starttime=$(date "+%s")
-        while true
-        do
-            if cat /var/lib/lxc/*/state | grep -vE "RUNNING|STOPPING" > /dev/null ; then
-                return 0
-            fi
-            sleep .25
-
-            curtime=$(date "+%s")
-
-            if [ $(( $curtime - $starttime )) -gt 30 ]; then
-                log_warning_msg "Containers have been stopping for longer than 30 seconds"
-                # TODO force their shutdown. And maybe 30 seconds isn't long enough
-                return 0
-            fi
-        done
-    fi
+  for C in $lxc_running_list ; do
+    log_progress_msg "$C"
+    lxc-halt -n $C &
+  done
 }
 
 case "$1" in
@@ -122,7 +86,6 @@ case "$1" in
 	esac
 	;;
   *)
-	#echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
 	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
 	exit 3
 	;;
