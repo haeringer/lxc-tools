@@ -1,3 +1,9 @@
+lxc-tools (0.1.1) unstable; urgency=low
+
+  * Patched lxc-status to work on newer LXC containers
+
+ -- Lucas Bonnet <lbonnet@bearstech.com>  Fri, 15 Jul 2011 17:54:42 +0200
+
 lxc-tools (0.1.0-2) unstable; urgency=low
 
   * Patched lxc-provider's functions.sh (dropped check for rootfs directory
