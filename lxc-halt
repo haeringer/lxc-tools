@@ -11,7 +11,7 @@
 
 # Default timeout for container shutdown
 TIMEOUT=90
-
+quiet=0
 
 [ -f /etc/default/lxc ] && . /etc/default/lxc
 
@@ -20,10 +20,11 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-while getopts "n:" flag
+while getopts "qn:" flag
 do
     case $flag in
         n) CONTAINER="$OPTARG" ;;
+        q) quiet=1 ;;
         *) echo "Unknown flag: $flag"; exit 1; ;;
     esac
 done
@@ -40,7 +41,9 @@ fi
 
 # try to shut it down properly, then default on a destroy after $TIMEOUT seconds
 if lxc-info -n $CONTAINER | grep -q "RUNNING" ; then
-  echo "Shutting down $CONTAINER..."
+  if [ $quiet -eq 0 ] ; then
+    echo "Shutting down $CONTAINER..."
+  fi
   ssh -o StrictHostKeyChecking=no root@$CONTAINER "halt"
   timeout $TIMEOUT lxc-wait -n $CONTAINER -s STOPPED
   if [ $? -eq 124 ] ; then

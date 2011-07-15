@@ -46,7 +46,7 @@ do_stop()
 {
   for C in $lxc_running_list ; do
     log_progress_msg "$C"
-    lxc-halt -n $C &
+    lxc-halt -q -n $C &
   done
 }
 
