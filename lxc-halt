@@ -9,14 +9,8 @@
 # Copyright (c) 2010 Nigel McNie
 #
 
-# Default command for halting the container
-SHUTDOWN_CMD="ssh [container] halt"
-
 # Default timeout for container shutdown
-TIMEOUT=20
-
-
-# No user configuration beyond this point
+TIMEOUT=90
 
 
 [ -f /etc/default/lxc ] && . /etc/default/lxc
@@ -39,34 +33,21 @@ if [ -z "$CONTAINER" ]; then
     exit 1
 fi
 
-if [ ! -f /var/lib/lxc/$CONTAINER/state ]; then
+if [ ! -d /var/lib/lxc/$CONTAINER/rootfs ]; then
     echo "lxc-halt: container $CONTAINER does not exist"
     exit 1
 fi
 
-if [ "$(cat /var/lib/lxc/$CONTAINER/state)" = "RUNNING" ]; then
-
-    cmd="${SHUTDOWN_CMD//\[container\]/$CONTAINER}"
-    ( $cmd )
-
-    starttime=$(date "+%s")
-    while true
-    do
-        count=$(lxc-ps --lxc -n $CONTAINER ax | grep "^$CONTAINER " | wc -l)
-        if [ $count = 1 ]; then
-            lxc-stop -n $CONTAINER
-            exit 0
-        fi
-        sleep .25
-
-        curtime=$(date "+%s")
-
-        if [ $(( $curtime - $starttime )) -gt $TIMEOUT ]; then
-            echo "Container has been stopping for longer than $TIMEOUT seconds, forcing shutdown" >&2
-            lxc-stop -n $CONTAINER
-            exit 0
-        fi
-    done
+# try to shut it down properly, then default on a destroy after $TIMEOUT seconds
+if lxc-info -n $CONTAINER | grep -q "RUNNING" ; then
+  echo "Shutting down $CONTAINER..."
+  ssh -o StrictHostKeyChecking=no root@$CONTAINER "halt"
+  timeout $TIMEOUT lxc-wait -n $CONTAINER -s STOPPED
+  if [ $? -eq 124 ] ; then
+    echo "$CONTAINER took too long (> $TIMEOUT seconds), destroying it..."
+    lxc-stop -n $CONTAINER
+  fi
 else
-    echo "Container $CONTAINER is already stopped" >&2
+  echo "Container $CONTAINER already shut down, skipping..."
 fi
+
