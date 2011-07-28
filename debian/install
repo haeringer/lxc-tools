@@ -2,6 +2,7 @@ lxc-debian /usr/bin
 lxc-ubuntu /usr/bin
 lxc-halt /usr/bin
 lxc-status /usr/bin
+lxc-init /etc/init.d
 
 lxc-watchdog.sh /usr/sbin
 lxc-provider/bin/lxc-provider /usr/sbin
