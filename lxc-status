@@ -20,6 +20,7 @@ for CONTAINER in $(ls -1 $lxcpath)
 do
 if [ -d $lxcpath/$CONTAINER/rootfs ]; then
 	echo -e "\nname:    "$CONTAINER
+	grep lxc.network.ipv4 $lxcpath/$CONTAINER/config | awk '{sub(/lxc.network.ipv4 =/,"address:");print}'
         lxc-info -n $CONTAINER
 fi
 done
