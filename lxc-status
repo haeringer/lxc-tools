@@ -9,15 +9,18 @@
 # Copyright (c) 2010 Nigel McNie
 #
 
-lxcpath=/var/lib/lxc
+lxcpath=/usr/local/var/lib/lxc
 
 if [ "$(id -u)" != "0" ]; then
-    echo "This script should be run as 'root'"
-    exit 1
+	echo "This script should be run as 'root'"
+	exit 1
 fi
 
-for CONTAINER in $(ls -1 $lxcpath); do
-  if [ -d $lxcpath/$CONTAINER/rootfs ]; then
-    lxc-info -n $CONTAINER
-  fi
+for CONTAINER in $(ls -1 $lxcpath)
+do
+if [ -d $lxcpath/$CONTAINER/rootfs ]; then
+	echo -e "\nname:    "$CONTAINER
+        lxc-info -n $CONTAINER
+fi
 done
+exit 0
